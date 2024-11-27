@@ -39,18 +39,34 @@ const upload = multer({
 // @access  Public
 router.get('/', async (req, res) => {
   try {
-    const products = await Product.find();
+    const { featured } = req.query;
+    const query = featured === 'true' ? { featured: true } : {};
+    const products = await Product.find(query);
     res.json(products);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
+router.get('/:id', async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    res.json(product);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
 // @route   POST /api/products
 // @desc    Create a new product
 // @access  Private/Admin
 router.post('/', protect, admin, upload.single('image'), async (req, res) => {
-  const { name, description, price, category, stock } = req.body;
+  const { name, description, price, category, stock, featured } = req.body;
   const imageUrl = req.file ? `/uploads/${req.file.filename}` : '';
 
   try {
@@ -61,6 +77,7 @@ router.post('/', protect, admin, upload.single('image'), async (req, res) => {
       category,
       stock,
       imageUrl,
+      featured: featured || false,
     });
 
     await product.save();
@@ -75,7 +92,7 @@ router.post('/', protect, admin, upload.single('image'), async (req, res) => {
 // @access  Private/Admin
 router.put('/:id', protect, admin, upload.single('image'), async (req, res) => {
     try {
-      const { name, description, price, category, stock } = req.body;
+      const { name, description, price, category, stock, featured } = req.body;
       const product = await Product.findById(req.params.id);
   
       if (!product) return res.status(404).json({ message: 'Product not found' });
@@ -85,6 +102,7 @@ router.put('/:id', protect, admin, upload.single('image'), async (req, res) => {
       product.price = price || product.price;
       product.category = category || product.category;
       product.stock = stock || product.stock;
+      product.featured = typeof featured !== 'undefined' ? featured : product.featured;
   
       if (req.file) {
         product.imageUrl = `/uploads/${req.file.filename}`;

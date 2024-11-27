@@ -3,6 +3,9 @@ import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
 import { admin, protect } from '../middlewares/authMiddleware.js';
 
+
+const { forgotPassword } = require('../controllers/authController');
+const { resetPassword } = require('../controllers/authController');
 const router = express.Router();
 
 
@@ -96,5 +99,8 @@ router.get('/', protect, admin, async (req, res) => {
       res.status(500).json({ message: error.message });
     }
   });
+
+  router.post('/forgot-password', forgotPassword);
+  router.post('/reset-password/:token', resetPassword);
 
 export default router;
